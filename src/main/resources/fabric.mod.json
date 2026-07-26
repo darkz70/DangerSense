@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${mod_version}",
+  "name": "${mod_name}",
+  "description": "${mod_description}",
+  "authors": ["${mod_authors}"],
+  "contact": {
+    "sources": "https://github.com/darkz70/DangerSense"
+  },
+  "license": "${mod_license}",
+  "icon": "icon/icon.png",
+  "environment": "${fabric_trick_side}",
+  "entrypoints": {
+    "main": ["com.darkz.dangersense.DangerSenseMod"],
+    "client": ["com.darkz.dangersense.client.DangerSenseClient"]
+  },
+  "accessWidener": "${fabric_trick_accesswidener_id}",
+  "mixins": [
+    "${fabric_trick_mixin_configs}"
+  ],
+  "depends": {
+    "fabricloader": ">=${fabric_loader}",
+    "${fabric_api_id}": "*",
+    "minecraft": ">=${minecraft}",
+    "java": ">=${java}",
+    "figurestonelib": ">=${figurestonelib}"
+  }
+}

@@ -1,0 +1,46 @@
+plugins {
+	// core-модуль сам применяет fabric-loom, stonecutter, mod-publish-plugin
+	// и настраивает mappings через loom.officialMojangMappings() — Yarn не используется.
+	id "net.darkz70.figurestone-plugin-core" version "1.2.0"
+
+	// ⚠ Применяю здесь же, а не в отдельном файле: при dev.kikugie.stonecutter.hard_mode=true
+	// (см. gradle.properties) корневой проект — это и есть текущая активная
+	// версия, так что один build.gradle одновременно годится и как
+	// per-версия скрипт (для -core), и как корневой (для -stonecutter,
+	// которому нужен project.getChildProjects()). Даёт агрегирующие задачи
+	// buildAndCollect / buildAndCollect+All / publish+All и т.д. —
+	// именно buildAndCollect+All вызывается в вашем реальном build.yml
+	// SkinTotem (`./gradlew buildAndCollect+All || ...`).
+	id "net.darkz70.figurestone-plugin-stonecutter" version "1.2.0"
+}
+
+figurestoneDependencies {
+	minecraft = stonecutter.current.version.toString()
+	fabricApi = prop("build.fabric_api")
+	fabricLoader = prop("build.fabric_loader")
+	lombok = prop("base.lombok_version")
+}
+
+// FigureStoneLib — ОБЯЗАТЕЛЬНАЯ зависимость. Подключается напрямую, а не
+// через "dep."-резолвинг плагина (тот заточен под Modrinth-координаты
+// maven.modrinth:<id>:<version>, а FigureStoneLib — в приватном GitHub Packages).
+repositories {
+	maven {
+		name "DarkZ70GitHubPackages"
+		url "https://maven.pkg.github.com/darkz70/FigureStoneLib"
+		credentials {
+			username = System.getenv("GH_PACKAGES_USERNAME")
+			password = System.getenv("GH_PACKAGES_TOKEN")
+		}
+	}
+}
+
+dependencies {
+	// modImplementation (не compileOnly/implementation) — библиотека нужна
+	// и на этапе компиляции, и на рантайме, и должна быть remap'нута Loom'ом.
+	modImplementation "com.darkz:figurestonelib:${prop("dep.figurestonelib")}"
+}
+
+String prop(String key) {
+	return findProperty(key)?.toString() ?: ""
+}

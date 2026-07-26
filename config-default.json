@@ -1,0 +1,24 @@
+{
+  "creeperAlertEnabled": true,
+  "tntAlertEnabled": true,
+  "wardenAlertEnabled": true,
+  "lowHealthAlertEnabled": true,
+  "drowningAlertEnabled": true,
+  "lavaAlertEnabled": true,
+  "fallAlertEnabled": true,
+
+  "creeperDetectionDistance": 8.0,
+  "tntDetectionDistance": 8.0,
+  "wardenDetectionDistance": 16.0,
+
+  "healthThreshold": 6.0,
+  "airThreshold": 100,
+  "fallDamageThreshold": 5.0,
+
+  "screenIntensity": 1.0,
+  "heartbeatVolume": 1.0,
+  "heartbeatInterval": 20,
+
+  "scanIntervalTicks": 4,
+  "hotReloadEnabled": false
+}

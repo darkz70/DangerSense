@@ -1,0 +1,40 @@
+pluginManagement {
+	repositories {
+		maven {
+			name "Fabric"
+			url "https://maven.fabricmc.net/"
+		}
+		maven {
+			name "Kiku Snapshots"
+			url "https://maven.kikugie.dev/snapshots"
+		}
+		maven {
+			name "Kiku Releases"
+			url "https://maven.kikugie.dev/releases"
+		}
+		// FigureStonePlugin сам публикуется в GitHub Packages вашей организации,
+		// как и FigureStoneLib. Учётные данные — из тех же секретов, что и в
+		// build.gradle (GH_PACKAGES_USERNAME / GH_PACKAGES_TOKEN).
+		maven {
+			name "DarkZ70GitHubPackages"
+			url "https://maven.pkg.github.com/darkz70/FigureStonePlugin"
+			credentials {
+				username = System.getenv("GH_PACKAGES_USERNAME")
+				password = System.getenv("GH_PACKAGES_TOKEN")
+			}
+		}
+		gradlePluginPortal()
+		mavenCentral()
+	}
+}
+
+plugins {
+	id "dev.kikugie.stonecutter"
+	// Версия подтверждена вами напрямую: 1.2.0 (в архиве, который вы
+	// присылали, была зашита другая — 3.7.0-beta.19, но, видимо, это
+	// устарело/не совпадает с реально опубликованной).
+	id "net.darkz70.figurestone-plugin-settings" version "1.2.0"
+}
+
+// Имя рутового проекта плагин выставит сам из "data.mod_name" (FigureStonePluginSettings#apply),
+// поэтому rootProject.name здесь намеренно не переопределяется.

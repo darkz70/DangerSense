@@ -1,0 +1,13 @@
+{
+  "heartbeat": {
+    "category": "master",
+    "subtitle": "subtitle.dangersense.heartbeat",
+    "sounds": [
+      {
+        "name": "dangersense:heartbeat",
+        "stream": false,
+        "attenuation_distance": 16
+      }
+    ]
+  }
+}
