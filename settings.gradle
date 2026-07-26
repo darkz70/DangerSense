@@ -29,7 +29,11 @@ pluginManagement {
 }
 
 plugins {
-	id "dev.kikugie.stonecutter"
+	// Версия сверена с gradle.properties самого FigureStonePlugin
+	// (stonecutter_version = 0.9) — без явной версии здесь Gradle не может
+	// зарезолвить плагин в settings.gradle (это и было причиной падения CI:
+	// "plugin dependency must include a version number for this source").
+	id "dev.kikugie.stonecutter" version "0.9"
 	// Версия подтверждена вами напрямую: 1.2.0 (в архиве, который вы
 	// присылали, была зашита другая — 3.7.0-beta.19, но, видимо, это
 	// устарело/не совпадает с реально опубликованной).
