@@ -1,180 +1,123 @@
 # Danger Sense
 
-Fabric-мод, который предупреждает игрока об опасных ситуациях (крипер, TNT,
-Страж, здоровье, воздух, лава, падение) до того, как они станут смертельными.
-**Никогда не блокирует урон** — только виньетка, звук сердцебиения и пульсация.
+A Fabric mod that warns the player about dangerous situations (creepers, TNT, Wardens, low health, lack of air, lava, falls) before they become fatal. **Never blocks damage** — only provides a vignette overlay, heartbeat sound, and pulsing effects.
 
-Собирается через ваш **FigureStonePlugin** (наследник MossyPlugin), на
-**official Mojang mappings** (не Yarn) — как задумано в новой,
-пост-ребрендинговой схеме вашей экосистемы.
+Built using your **FigureStonePlugin** (successor to MossyPlugin), on **official Mojang mappings** (not Yarn) — as intended in the new, post-rebranding scheme of your ecosystem.
 
-## Структура пакетов
+## Package Structure
 
 ```
 com.darkz.dangersense
-├── DangerSenseMod          — common entrypoint, регистрация звука, загрузка конфига
+├── DangerSenseMod          — common entrypoint, sound registration, config loading
 ├── client/
-│   ├── DangerSenseClient   — client entrypoint, регистрация HUD/tick колбэков
-│   └── ClientTickHandler   — связывает WarningManager, HeartbeatPlayer, VignetteOverlay
+│   ├── DangerSenseClient   — client entrypoint, HUD/tick callback registration
+│   └── ClientTickHandler   — links WarningManager, HeartbeatPlayer, and VignetteOverlay
 ├── config/
-│   ├── DangerSenseConfig   — POJO для Gson
-│   └── ConfigManager       — load/save JSON + опциональный hot reload
+│   ├── DangerSenseConfig   — POJO for Gson
+│   └── ConfigManager       — JSON load/save + optional hot reload
 ├── danger/
-│   ├── DangerLevel         — NONE/LOW/MEDIUM/HIGH/CRITICAL с базовой интенсивностью
-│   ├── DangerWarning       — record: итог одного тика (source, level, intensity)
-│   └── WarningManager      — тикает все детекторы, выбирает самый сильный
+│   ├── DangerLevel         — NONE/LOW/MEDIUM/HIGH/CRITICAL with base intensity
+│   ├── DangerWarning       — record: single tick result (source, level, intensity)
+│   └── WarningManager      — ticks all detectors, selects the strongest warning
 ├── detector/
-│   ├── DangerDetector      — общий интерфейс (shouldWarn + getLevel/getIntensity)
+│   ├── DangerDetector      — common interface (shouldWarn + getLevel/getIntensity)
 │   ├── CreeperDetector, TntDetector, WardenDetector,
 │   │   LowHealthDetector, DrowningDetector, LavaDetector, FallDetector
 ├── render/
-│   ├── VignetteOverlay     — процедурная виньетка по краям экрана (без текстур)
-│   └── PulseAnimation      — синусоидальная пульсация альфы
+│   ├── VignetteOverlay     — procedural vignette at screen edges (no textures)
+│   └── PulseAnimation      — sinusoidal alpha pulsation
 ├── sound/
-│   └── HeartbeatPlayer     — воспроизведение heartbeat с интервалом от интенсивности
+│   └── HeartbeatPlayer     — heartbeat playback with interval based on intensity
 └── util/
-    ├── RaycastUtil         — line-of-sight без лишних аллокаций
-    └── TickThrottle        — «раз в N тиков» без лишней логики
+    ├── RaycastUtil         — line-of-sight without excessive allocations
+    └── TickThrottle        — "once every N ticks" without extra logic
 ```
 
-Пакет — `com.darkz.dangersense` (как `com.darkz.skintotem` в вашем реальном
-SkinTotem), не `com.darkz70.*`.
+Package — `com.darkz.dangersense` (matching `com.darkz.skintotem` in your real SkinTotem), not `com.darkz70.*`.
 
-## Сборка (FigureStonePlugin)
+## Build System (FigureStonePlugin)
 
-Всё Gradle-обвязка идёт через ваш плагин `net.darkz70.figurestone-plugin-*`
-(модули `settings` и `core`), а не через голый `fabric-loom`:
+All Gradle wrapping is handled via your `net.darkz70.figurestone-plugin-*` plugin (`settings` and `core` modules), rather than bare `fabric-loom`:
 
-- **`settings.gradle`** — применяет `net.darkz70.figurestone-plugin-settings`.
-  Он сам создаёт stonecutter-подпроекты `fabric-<version>` из
-  `fabric.multi_versions` в корневом `gradle.properties`, сам генерирует/
-  обновляет `versions/fabric-<version>/gradle.properties` (там нужен только
-  `build.fabric_api` — плагин заполняет его сам при пустом файле).
-- **`build.gradle`** (корневой, применяется к каждой версии-подпроекту) —
-  подключает `net.darkz70.figurestone-plugin-core` и настраивает блок
-  `figurestoneDependencies { minecraft, fabricApi, fabricLoader, lombok }`.
-  FigureStoneLib подключена отдельно (она не идёт через `dep.*`-механизм
-  плагина — это для Modrinth-модов, а FigureStoneLib у вас в приватном
-  GitHub Packages).
-- **`gradle.properties`** — схема `data.*` / `mod_loaders` / `fabric.multi_versions`,
-  как в вашем архиве `FigureStonePlugin_repository.zip`.
-- Папки версий — **`versions/fabric-1.20.1`**, а не `versions/1.20.1`
-  (имя проекта в Stonecutter = `<loader>-<version>`).
+- **`settings.gradle`** — applies `net.darkz70.figurestone-plugin-settings`.
+  It automatically creates Stonecutter subprojects `fabric-<version>` from `fabric.multi_versions` in the root `gradle.properties`, and generates/updates `versions/fabric-<version>/gradle.properties` (only `build.fabric_api` is needed there — the plugin fills it automatically if the file is empty).
+- **`build.gradle`** (root, applied to each version subproject) — connects `net.darkz70.figurestone-plugin-core` and configures the `figurestoneDependencies { minecraft, fabricApi, fabricLoader, lombok }` block.
+  FigureStoneLib is connected separately (it doesn't go through the plugin's `dep.*` mechanism — that's for Modrinth mods, while FigureStoneLib is in your private GitHub Packages).
+- **`gradle.properties`** — follows the `data.*` / `mod_loaders` / `fabric.multi_versions` scheme, as seen in your `FigureStonePlugin_repository.zip` archive.
+- Version folders — **`versions/fabric-1.20.1`**, not `versions/1.20.1` (Stonecutter project name = `<loader>-<version>`).
 
-### ✅ Версия плагина
+### ✅ Plugin Version
 
-`settings.gradle`/`build.gradle` используют `version "1.2.0"` — подтверждено
-вами напрямую (в присланном архиве `FigureStonePlugin_repository.zip` была
-зашита другая, `3.7.0-beta.19` — видимо, устаревший снапшот).
+`settings.gradle`/`build.gradle` use `version "1.2.0"` — confirmed by you directly (the provided `FigureStonePlugin_repository.zip` archive had `3.7.0-beta.19` hardcoded, which was likely an outdated snapshot).
 
-### ✅ Модуль `figurestone-plugin-stonecutter` теперь тоже подключён
+### ✅ `figurestone-plugin-stonecutter` Module Integration
 
-Во втором архиве нашёлся модуль `stonecutter` (в первом его не было). Он даёт
-агрегирующие задачи `buildAndCollect+<loader>+All`, `buildAndCollect+All`,
-`publish+All` и т.д. — именно `buildAndCollect+All` вызывается в вашем
-реальном `build.yml` SkinTotem (`./gradlew buildAndCollect+All || ...`).
-Применён в том же `build.gradle`, что и `-core`: при
-`dev.kikugie.stonecutter.hard_mode=true` корневой проект — это и есть
-текущая активная версия, так что один файл одновременно работает и как
-per-версия скрипт, и как корневой (с видимостью дочерних проектов).
+The second archive included the `stonecutter` module (which was missing from the first). It provides aggregate tasks like `buildAndCollect+<loader>+All`, `buildAndCollect+All`, `publish+All`, etc. Specifically, `buildAndCollect+All` is called in your real SkinTotem `build.yml` (`./gradlew buildAndCollect+All || ...`). It is applied in the same `build.gradle` as `-core`: with `dev.kikugie.stonecutter.hard_mode=true`, the root project acts as the currently active version, so a single file works as both a per-version script and a root script (with visibility of child projects).
 
-`buildAndCollect` (per-версия, из `-core`) копирует готовый jar в корневую
-`libs/` — `.github/workflows/build.yml` обновлён под это (`path: libs/*.jar`
-вместо `versions/fabric-*/build/libs/*.jar`).
+`buildAndCollect` (per-version, from `-core`) copies the resulting jar to the root `libs/` — `.github/workflows/build.yml` has been updated to reflect this (`path: libs/*.jar` instead of `versions/fabric-*/build/libs/*.jar`).
 
-## ⚠️ Главное: official Mojang mappings, не Yarn
+## ⚠️ Key Note: Official Mojang Mappings, not Yarn
 
-`FabricLoaderManager` (core-модуль плагина) подключает маппинги так:
+`FabricLoaderManager` (plugin's core module) connects mappings as follows:
 ```java
 dependencies.add("mappings", loom.officialMojangMappings());
 ```
-Поэтому весь Java-код здесь написан на именах классов/методов Mojang
-(`Player`, `ClientLevel`, `Creeper`, `PrimedTnt`, `Warden`, `getDeltaMovement()`,
-`onGround()`, `distanceToSqr()` и т.д.), а не на Yarn (`PlayerEntity`,
-`ClientWorld`, `squaredDistanceTo()` и т.д.).
+Therefore, all Java code here is written using Mojang class/method names (`Player`, `ClientLevel`, `Creeper`, `PrimedTnt`, `Warden`, `getDeltaMovement()`, `onGround()`, `distanceToSqr()`, etc.), not Yarn (`PlayerEntity`, `ClientWorld`, `squaredDistanceTo()`, etc.).
 
-**Часть имён методов я не могу подтвердить без доступа к реальным mappings
-или собранному проекту** — такие места помечены прямо в коде комментарием
-`⚠ MOJMAP UNCERTAINTY` / `⚠ MOJMAP:`. Список самых рискованных:
+**Some method names cannot be confirmed without access to real mappings or a compiled project** — such places are marked in the code with comments like `⚠ MOJMAP UNCERTAINTY` / `⚠ MOJMAP:`. List of most "at-risk" locations:
 
-| Файл | Место | Риск |
+| File | Location | Risk |
 |---|---|---|
-| `DangerSenseMod.java` | `SoundEvent.createVariableRangeEvent(...)`, `new ResourceLocation(...)` | средний — конструктор `ResourceLocation` мог стать deprecated/приватным в поздних 1.21.x |
-| `CreeperDetector.java` | `creeper.getSwellFactor(0f)` | высокий — не уверен в точном имени; fallback указан в комментарии (`isIgnited()`) |
-| `TntDetector.java` | `tnt.getFuse()` | низкий-средний |
-| `FallDetector.java` | `result.getLocation()` | средний |
-| `HeartbeatPlayer.java` | `player.level()` | средний |
-| `RaycastUtil.java`, `FallDetector.java` | `ClipContext.Block` / `ClipContext.Fluid` | средний |
+| `DangerSenseMod.java` | `SoundEvent.createVariableRangeEvent(...)`, `new ResourceLocation(...)` | Medium — `ResourceLocation` constructor might be deprecated/private in late 1.21.x |
+| `CreeperDetector.java` | `creeper.getSwellFactor(0f)` | High — uncertain of the exact name; fallback is noted in comments (`isIgnited()`) |
+| `TntDetector.java` | `tnt.getFuse()` | Low-Medium |
+| `FallDetector.java` | `result.getLocation()` | Medium |
+| `HeartbeatPlayer.java` | `player.level()` | Medium |
+| `RaycastUtil.java`, `FallDetector.java` | `ClipContext.Block` / `ClipContext.Fluid` | Medium |
 
-Остальные замены (`getHealth()`, `getAirSupply()`, `getDeltaMovement()`,
-`onGround()`, `distanceToSqr()`, `getEntitiesOfClass()`, `inflate()`,
-`position()`, `blockPosition()`, `getEyePosition()`, `BlockPos.containing()`,
-`fluidState.is()`, `guiWidth()/guiHeight()`) — уверенность выше, но тоже не
-проверено компиляцией. **Это неизбежно потребует одного прогона CI и правки
-по логам ошибок** — так же, как вы обычно и работаете с новыми API.
+Other replacements (`getHealth()`, `getAirSupply()`, `getDeltaMovement()`, `onGround()`, `distanceToSqr()`, `getEntitiesOfClass()`, `inflate()`, `position()`, `blockPosition()`, `getEyePosition()`, `BlockPos.containing()`, `fluidState.is()`, `guiWidth()/guiHeight()`) have higher confidence but remain unverified by compilation. **This will inevitably require a CI run and fixes based on error logs** — just as you usually work with new APIs.
 
-## Java-версия по MC-версии (авто, из вашего плагина)
+## Java Version by MC Version (Auto, from your plugin)
 
-`FigureStonePluginCore.getJavaVersion()` сам выбирает JDK по версии MC:
+`FigureStonePluginCore.getJavaVersion()` automatically selects the JDK based on the MC version:
 `< 1.16.5 → 8`, `< 1.18 → 16`, `< 1.20.5 → 17`, `< 26.1 → 21`, `≥ 26.1 → 25`.
-То есть для всего диапазона Danger Sense (1.20.1–1.21.11) реально будет
-использоваться **JDK 21**, а не 25 — плагин выберет его сам, вне зависимости
-от того, что было в исходном ТЗ.
+Thus, for the entire Danger Sense range (1.20.1–1.21.11), **JDK 21** will actually be used, not 25 — the plugin will select it regardless of the original requirements.
 
-## Производительность
+## Performance
 
-- Детекторы вызываются не каждый тик, а раз в `scanIntervalTicks` (по
-  умолчанию 4) через `TickThrottle` в `WarningManager`.
-- Поиск сущностей — `getEntitiesOfClass` с ограниченным `AABB` вокруг игрока,
-  без сканирования мира целиком.
-- `RaycastUtil` — один `ClipContext` без промежуточных списков.
-- Виньетка рисуется процедурно `fillGradient`, без текстур.
+- Detectors are called every `scanIntervalTicks` (default 4) via `TickThrottle` in `WarningManager`, not every single tick.
+- Entity searching — `getEntitiesOfClass` with a limited `AABB` around the player, avoiding full-world scans.
+- `RaycastUtil` — uses a single `ClipContext` without intermediate lists.
+- Vignette is rendered procedurally via `fillGradient`, without textures.
 
-## Конфиг
+## Configuration
 
-`config/dangersense.json` создаётся автоматически при первом запуске
-(эталон значений — `config-default.json` в корне). Хот-релоад
-(`hotReloadEnabled`) проверяет файл не каждый тик, а примерно раз в секунду.
+`config/dangersense.json` is created automatically on the first launch (default values are taken from `config-default.json` in the root). Hot reload (`hotReloadEnabled`) checks the file approximately once per second, not every tick.
 
-## FigureStoneLib — обязательная зависимость
+## FigureStoneLib — Required Dependency
 
-FigureStoneLib подключена не опционально, а как **жёсткая зависимость**:
+FigureStoneLib is connected as a **hard dependency**, not optional:
 
 - `build.gradle`: `modImplementation "com.darkz:figurestonelib:${prop("dep.figurestonelib")}"`
-- `gradle.properties`: `dep.figurestonelib = 1.0.0` (версия — поставьте актуальную)
-- `fabric.mod.json`: `"figurestonelib": ">=${figurestonelib}"` в `depends` —
-  без неё игра не запустит мод (Fabric Loader покажет экран с недостающей
-  зависимостью).
+- `gradle.properties`: `dep.figurestonelib = 1.0.0` (update to the current version)
+- `fabric.mod.json`: `"figurestonelib": ">=${figurestonelib}"` in `depends` — the game will not start the mod without it (Fabric Loader will show a missing dependency screen).
 
-⚠ У меня есть исходники **FigureStonePlugin** (build-плагин), но не самой
-**FigureStoneLib** (библиотеки) — поэтому я не могу подставить в код реальные
-вызовы её API (методы, классы), только оставить комментарии-точки интеграции
-ниже. Если пришлёте архив с её исходниками — подключу по-настоящему, а не
-абстрактно.
+⚠ I have the source code for **FigureStonePlugin** (build plugin), but not for **FigureStoneLib** (the library) itself — therefore, I cannot substitute real API calls (methods, classes) into the code, only leave integration points as comments. If you provide the library's source code, I can perform a proper integration.
 
-Точки, где FigureStoneLib напрашивается:
-1. **`config/ConfigManager`** — если в библиотеке есть общий
-   `JsonConfig<T>`/file-watcher, замените ручной Gson I/O на него.
-2. **`util/RaycastUtil`** — если там уже есть raycast/line-of-sight утилиты.
-3. **Логирование** — `DangerSenseMod.LOGGER` можно заменить на общий логер.
+Potential integration points for FigureStoneLib:
+1. **`config/ConfigManager`** — if the library has a common `JsonConfig<T>`/file-watcher, replace manual Gson I/O with it.
+2. **`util/RaycastUtil`** — if it already contains raycast/line-of-sight utilities.
+3. **Logging** — `DangerSenseMod.LOGGER` can be replaced with a common logger.
 
 ## Gradle Wrapper
 
-`gradlew` / `gradlew.bat` / `gradle-wrapper.properties` (Gradle 8.14) и
-`gradle-wrapper.jar` — всё включено (jar — тот, что вы загрузили,
-скрипты — скопированы из вашего реального SkinTotem).
+`gradlew` / `gradlew.bat` / `gradle-wrapper.properties` (Gradle 8.14) and `gradle-wrapper.jar` are all included (the jar is the one you uploaded, scripts are copied from your real SkinTotem).
 
 ## GitHub Actions
 
-`.github/workflows/build.yml`: JDK 21 (проверенный вариант, см. раздел про
-Java-версию выше), `chmod +x ./gradlew`, `./gradlew build`. Секрет
-`GH_PACKAGES_TOKEN` нужен и для FigureStoneLib, и для самого FigureStonePlugin
-(`settings.gradle` его тоже использует) — убедитесь, что у него хватает прав
-на чтение обоих приватных пакетов.
+`.github/workflows/build.yml`: Uses JDK 21 (verified option, see Java version section), `chmod +x ./gradlew`, `./gradlew build`. The `GH_PACKAGES_TOKEN` secret is required for both FigureStoneLib and FigureStonePlugin (`settings.gradle` uses it too) — ensure it has read permissions for both private packages.
 
-## Чего не хватает / не проверено
+## Missing / Unverified Items
 
-- Все места `⚠ MOJMAP` в коде (таблица выше) — первый прогон CI покажет,
-  что чинить.
-- Реальные вызовы FigureStoneLib (см. раздел выше) — есть только исходники
-  build-плагина, не самой библиотеки.
+- All `⚠ MOJMAP` locations in the code (see table above) — the first CI run will indicate what needs fixing.
+- Real FigureStoneLib calls (see section above) — only build plugin sources are available, not the library itself.
